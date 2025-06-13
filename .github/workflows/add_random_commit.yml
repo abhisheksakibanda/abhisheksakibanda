@@ -1,0 +1,70 @@
+name: Random Time Commits with Delay
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:     # Allows manual trigger
+
+jobs:
+  random-delay-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sleep for a random delay (up to 24 hours)
+        run: |
+          delay=$(( RANDOM % 43200 ))  # Seconds in 12 hours
+          echo "Sleeping for $delay seconds before starting commits..."
+          sleep $delay
+
+      - name: Set Variables
+        run: |
+          echo "USERNAME=abhisheksakibanda" >> $GITHUB_ENV
+
+      - name: Fetch Public Repos
+        id: fetch_repos
+        run: |
+          repos=$(curl -s -H "Authorization: token ${{ secrets.AUTO_COMMIT_PAT }}" \
+            "https://api.github.com/users/${{ env.USERNAME }}/repos?per_page=100" \
+            | jq -r '.[] | select(.private==false) | .name')
+
+          echo "$repos" > repos.txt
+
+      - name: Pick Random Repos
+        id: pick_random
+        run: |
+          mapfile -t all_repos < repos.txt
+          repo_count=${#all_repos[@]}
+          echo "Total public repos: $repo_count"
+
+          n=$(( (RANDOM % 3) + 1 ))  # Pick between 1 and 3 repos
+          selected=()
+          while [ ${#selected[@]} -lt $n ]; do
+            pick=${all_repos[$((RANDOM % repo_count))]}
+            [[ " ${selected[*]} " =~ " $pick " ]] || selected+=("$pick")
+          done
+
+          echo "Selected repos: ${selected[*]}"
+          echo "${selected[*]}" > selected_repos.txt
+
+      - name: Commit to Random Repos
+        run: |
+          mapfile -t repos < selected_repos.txt
+
+          for repo in "${repos[@]}"; do
+            echo "Cloning and committing to: $repo"
+
+            git clone https://x-access-token:${{ secrets.AUTO_COMMIT_PAT }}@github.com/${{ env.USERNAME }}/$repo.git
+            cd $repo
+
+            echo "Commit made at $(date)" >> commit_log.txt
+
+            git config user.name "${{ env.USERNAME }}"
+            git config user.email "${{ env.USERNAME }}@users.noreply.github.com"
+
+            git add commit_log.txt
+            git commit -m "🤖 Random commit on $(date)"
+            git push
+
+            cd ..
+            rm -rf $repo
+          done
