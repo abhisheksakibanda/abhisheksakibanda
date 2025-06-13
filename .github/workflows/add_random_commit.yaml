@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Sleep for a random delay (up to 24 hours)
         run: |
-          delay=$(( RANDOM % 43200 ))  # Seconds in 12 hours
+          delay=$(( RANDOM % 86400 ))  # Seconds in 24 hours
           echo "Sleeping for $delay seconds before starting commits..."
           sleep $delay
 
