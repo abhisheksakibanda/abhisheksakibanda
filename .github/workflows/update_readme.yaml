@@ -23,32 +23,21 @@ jobs:
         run: |
           start_date="2016-08-10 00:00:00"
           start_epoch=$(date -d "$start_date" +%s)
-          now_epoch=$(date +%s)
-          elapsed_seconds=$((now_epoch - start_epoch))
-
-          days=$((elapsed_seconds / 86400))
-          hours=$(( (elapsed_seconds % 86400) / 3600 ))
-          minutes=$(( (elapsed_seconds % 3600) / 60 ))
-          seconds=$((elapsed_seconds % 60))
-
-          echo "days=$days" >> $GITHUB_OUTPUT
-          echo "hours=$hours" >> $GITHUB_OUTPUT
-          echo "minutes=$minutes" >> $GITHUB_OUTPUT
-          echo "seconds=$seconds" >> $GITHUB_OUTPUT
-
-      - name: Make N Random Commits
-        run: |
-          days=${{ steps.calculate-time.outputs.days }}
-          hours=${{ steps.calculate-time.outputs.hours }}
-          minutes=${{ steps.calculate-time.outputs.minutes }}
-          seconds=${{ steps.calculate-time.outputs.seconds }}
-
+          
           n=$(( (RANDOM % 5) + 1 ))
           echo "Will make $n commits"
 
           for i in $(seq 1 $n); do
+            now_epoch=$(date +%s)
+            elapsed_seconds=$((now_epoch - start_epoch))
+          
+            days=$((elapsed_seconds / 86400))
+            hours=$(( (elapsed_seconds % 86400) / 3600 ))
+            minutes=$(( (elapsed_seconds % 3600) / 60 ))
+            seconds=$((elapsed_seconds % 60))
+          
             message="I have been actively coding for ${days} days, ${hours} hours, ${minutes} minutes, and ${seconds} seconds since August 10, 2016."
-
+          
             # Remove old line and add new line
             if [[ -f README.md ]]; then
               grep -v "I have been actively coding for" README.md > temp.md || true
@@ -57,9 +46,15 @@ jobs:
             fi
             echo "$message" >> temp.md
             mv temp.md README.md
-
+          
             git add README.md
-            git commit -m "Update README with active coding time (Commit $i of $n)"
-            git push
+          
+            if git diff-index --quiet HEAD; then
+              echo "Nothing to commit in iteration $i"
+            else
+              git commit -m "Update README with active coding time (Commit $i of $n)"
+              git push
+            fi
+          
             sleep 5
           done
