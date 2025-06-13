@@ -1,9 +1,9 @@
-name: Update Readme with Active Coding Days
+name: Update Readme with Active Coding Duration
 
 on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight UTC
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
 
 jobs:
   update-readme:
@@ -13,45 +13,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Calculate Active Coding Days
-        id: calculate-days
-        run: |
-          # Set the start date
-          start_date="2016-08-10"
-
-          # Calculate the number of days
-          start_date_epoch=$(date -d "$start_date" +%s)
-          today_epoch=$(date +%s)
-          active_days=$(( (today_epoch - start_date_epoch) / 86400 ))
-
-          # Output the result
-          echo "::set-output name=active_days::$active_days"
-
-      - name: Update README
-        run: |
-          # Append or update the README with active days info
-          coding_message="I have been actively coding for ${{ steps.calculate-days.outputs.active_days }} days since August 2016."
-
-          # Read the current README content
-          if [[ -f README.md ]]; then
-            current_content=$(cat README.md)
-          else
-            current_content=""
-          fi
-
-          # Replace or append the coding message
-          echo "$current_content" | grep -v "I have been actively coding for" > README.md
-          echo "$coding_message" >> README.md
-
-      - name: Commit and Push Changes
+      - name: Set up Git
         run: |
           git config --global user.name "abhisheksakibanda"
           git config --global user.email "abhisheksakibanda@gmail.com"
-          git add README.md
 
-          if git diff-index --quiet HEAD; then
-            echo "No changes to commit."
-          else
-            git commit -m "Update README with active coding days"
+      - name: Calculate Active Coding Time
+        id: calculate-time
+        run: |
+          start_date="2016-08-10 00:00:00"
+          start_epoch=$(date -d "$start_date" +%s)
+          now_epoch=$(date +%s)
+          elapsed_seconds=$((now_epoch - start_epoch))
+
+          days=$((elapsed_seconds / 86400))
+          hours=$(( (elapsed_seconds % 86400) / 3600 ))
+          minutes=$(( (elapsed_seconds % 3600) / 60 ))
+
+          echo "days=$days" >> $GITHUB_OUTPUT
+          echo "hours=$hours" >> $GITHUB_OUTPUT
+          echo "minutes=$minutes" >> $GITHUB_OUTPUT
+
+      - name: Make N Random Commits
+        run: |
+          days=${{ steps.calculate-time.outputs.days }}
+          hours=${{ steps.calculate-time.outputs.hours }}
+          minutes=${{ steps.calculate-time.outputs.minutes }}
+
+          n=$(( (RANDOM % 5) + 1 ))
+          echo "Will make $n commits"
+
+          for i in $(seq 1 $n); do
+            message="I have been actively coding for ${days} days, ${hours} hours, and ${minutes} minutes since August 10, 2016."
+
+            # Remove old line and add new line
+            if [[ -f README.md ]]; then
+              grep -v "I have been actively coding for" README.md > temp.md || true
+            else
+              touch temp.md
+            fi
+            echo "$message" >> temp.md
+            mv temp.md README.md
+
+            git add README.md
+            git commit -m "Update README with active coding time (Commit $i of $n)"
             git push
-          fi
+            sleep 5
+          done
