@@ -44,7 +44,9 @@ jobs:
           done
 
           echo "Selected repos: ${selected[*]}"
-          echo "${selected[*]}" > selected_repos.txt
+          for repo in "${selected[@]}"; do
+            echo "$repo"
+          done > selected_repos.txt
 
       - name: Commit to Random Repos
         run: |
