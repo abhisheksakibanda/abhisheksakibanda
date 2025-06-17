@@ -1,20 +1,34 @@
-name: Random Time Commits with Delay
+name: Random Commits to Repos
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:     # Allows manual trigger
+    - cron: '0 0 * * *'  # Runs at midnight UTC
+  workflow_dispatch:      # Manual trigger
 
 jobs:
-  random-delay-commit:
+  random-commits:
     runs-on: ubuntu-latest
+    env:
+      USERNAME: abhisheksakibanda
+      # Make sure you have AUTO_COMMIT_PAT in repo secrets
 
     steps:
-      - name: Sleep for a random delay (up to 24 hours)
+      - name: Set up random delay
+        id: maybe-delay
         run: |
-          delay=$(( RANDOM % 86400 ))  # Seconds in 24 hours
-          echo "Sleeping for $delay seconds before starting commits..."
-          sleep $delay
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual run – skipping delay."
+            echo "sleep_time=0" >> $GITHUB_OUTPUT
+          else
+            sleep_time=$(( RANDOM % 86400 ))
+            echo "Scheduled run – sleeping for $sleep_time seconds."
+            echo "sleep_time=$sleep_time" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sleep before execution (only for scheduled runs)
+        run: |
+          echo "Sleeping for ${{ steps.maybe-delay.outputs.sleep_time }} seconds..."
+          sleep ${{ steps.maybe-delay.outputs.sleep_time }}
 
       - name: Set Variables
         run: |
