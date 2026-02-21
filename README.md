@@ -8,4 +8,4 @@
 abhisheksakibanda/abhisheksakibanda is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 You can click the Preview link to take a look at your changes.
 --->
-I have been actively coding for 3482 days, 4 hours, 7 minutes, and 13 seconds since August 10, 2016.
+I have been actively coding for 3482 days, 6 hours, 55 minutes, and 46 seconds since August 10, 2016.
